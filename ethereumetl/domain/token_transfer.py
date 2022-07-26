@@ -30,3 +30,9 @@ class EthTokenTransfer(object):
         self.transaction_hash = None
         self.log_index = None
         self.block_number = None
+        # support ERC1155
+        self.operator_address = None
+        self.id = None
+        self.ids = []
+        self.values = []
+

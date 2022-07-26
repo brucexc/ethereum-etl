@@ -30,7 +30,11 @@ FIELDS_TO_EXPORT = [
     'value',
     'transaction_hash',
     'log_index',
-    'block_number'
+    'block_number',
+    'operator_address',
+    'id',
+    'ids',
+    'values',
 ]
 
 

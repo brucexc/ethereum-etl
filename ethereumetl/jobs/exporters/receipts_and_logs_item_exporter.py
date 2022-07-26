@@ -44,7 +44,12 @@ LOG_FIELDS_TO_EXPORT = [
     'block_number',
     'address',
     'data',
-    'topics'
+    'topics',
+    'topic1',
+    'topic2',
+    'topic3',
+    'topic4',
+
 ]
 
 

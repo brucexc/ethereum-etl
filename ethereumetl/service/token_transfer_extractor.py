@@ -29,17 +29,20 @@ from ethereumetl.utils import chunk_string, hex_to_dec, to_normalized_address
 
 # https://ethereum.stackexchange.com/questions/12553/understanding-logs-and-log-blooms
 TRANSFER_EVENT_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+TRANSFER_SINGLE_EVENT_TOPIC = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
+TRANSFER_BATCH_EVENT_TOPIC = '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb'
+
 logger = logging.getLogger(__name__)
 
-
 class EthTokenTransferExtractor(object):
+
     def extract_transfer_from_log(self, receipt_log):
 
         topics = receipt_log.topics
         if topics is None or len(topics) < 1:
             # This is normal, topics can be empty for anonymous events
             return None
-
+        # support ERC20/ERC721
         if (topics[0]).casefold() == TRANSFER_EVENT_TOPIC:
             # Handle unindexed event fields
             topics_with_data = topics + split_to_words(receipt_log.data)
@@ -53,12 +56,57 @@ class EthTokenTransferExtractor(object):
             token_transfer.token_address = to_normalized_address(receipt_log.address)
             token_transfer.from_address = word_to_address(topics_with_data[1])
             token_transfer.to_address = word_to_address(topics_with_data[2])
-            token_transfer.value = hex_to_dec(topics_with_data[3])
+            # token_transfer.value = hex_to_dec(topics_with_data[3])
+            if len(topics) != 4:
+                token_transfer.value = hex_to_dec(topics_with_data[3])
+            else:
+                token_transfer.id = hex_to_dec(topics_with_data[3])
             token_transfer.transaction_hash = receipt_log.transaction_hash
             token_transfer.log_index = receipt_log.log_index
             token_transfer.block_number = receipt_log.block_number
             return token_transfer
+        elif (topics[0]).casefold() == TRANSFER_SINGLE_EVENT_TOPIC:
+            # Handle unindexed event fields
+            topics_with_data = topics + split_to_words(receipt_log.data)
+            # if the number of topics and fields in data part != 4, then it's a weird event
+            if len(topics_with_data) != 6:
+                logger.warning("The number of topics and data parts is not equal to 6 in log {} of transaction {}"
+                               .format(receipt_log.log_index, receipt_log.transaction_hash))
+                return None
 
+            token_transfer = EthTokenTransfer()
+            token_transfer.token_address = to_normalized_address(receipt_log.address)
+            token_transfer.from_address = word_to_address(topics_with_data[2])
+            token_transfer.to_address = word_to_address(topics_with_data[3])
+            token_transfer.operator_address = word_to_address(topics_with_data[1])
+            token_transfer.value = hex_to_dec(topics_with_data[5])
+            token_transfer.id = hex_to_dec(topics_with_data[4])
+            token_transfer.transaction_hash = receipt_log.transaction_hash
+            token_transfer.log_index = receipt_log.log_index
+            token_transfer.block_number = receipt_log.block_number
+            return token_transfer
+        elif (topics[0]).casefold() == TRANSFER_BATCH_EVENT_TOPIC:
+            # Handle unindexed event fields
+            topics_with_data = topics + split_to_words(receipt_log.data)
+            # if the number of topics and fields in data part != 4, then it's a weird event
+            # if len(topics_with_data) != 10:
+            logger.info("The number of topics and data parts is equal to {} in log {} of transaction {}"
+                        .format(len(topics_with_data), receipt_log.log_index, receipt_log.transaction_hash))
+            # return None
+            nums = hex_to_dec(topics_with_data[6])
+            token_transfer = EthTokenTransfer()
+            token_transfer.token_address = to_normalized_address(receipt_log.address)
+            token_transfer.from_address = word_to_address(topics_with_data[2])
+            token_transfer.to_address = word_to_address(topics_with_data[3])
+            token_transfer.operator_address = word_to_address(topics_with_data[1])
+            # nums = hex_to_dec(topics_with_data[6])
+            for num in range(1, nums + 1):
+                token_transfer.ids.append(hex_to_dec(topics_with_data[num + 6]))
+                token_transfer.values.append(hex_to_dec(topics_with_data[num + 8]))
+            token_transfer.transaction_hash = receipt_log.transaction_hash
+            token_transfer.log_index = receipt_log.log_index
+            token_transfer.block_number = receipt_log.block_number
+            return token_transfer
         return None
 
 

@@ -76,7 +76,11 @@ class EthReceiptLogMapper(object):
             'block_number': receipt_log.block_number,
             'address': receipt_log.address,
             'data': receipt_log.data,
-            'topics': receipt_log.topics
+            'topics': receipt_log.topics,
+            'topic1': receipt_log.topics[0] if len(receipt_log.topics) > 0 else '',
+            'topic2': receipt_log.topics[1] if len(receipt_log.topics) > 1 else '',
+            'topic3': receipt_log.topics[2] if len(receipt_log.topics) > 2 else '',
+            'topic4': receipt_log.topics[3] if len(receipt_log.topics) > 3 else '',
         }
 
     def dict_to_receipt_log(self, dict):
@@ -91,6 +95,7 @@ class EthReceiptLogMapper(object):
         receipt_log.data = dict.get('data')
 
         topics = dict.get('topics')
+
         if isinstance(topics, str):
             if len(topics.strip()) == 0:
                 receipt_log.topics = []

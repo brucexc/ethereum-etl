@@ -44,7 +44,7 @@ logging_basic_config()
               help='The URI of the web3 provider e.g. file://$HOME/Library/Ethereum/geth.ipc or http://localhost:8545/')
 @click.option('-t', '--tokens', default=None, show_default=True, type=str, multiple=True, help='The list of token addresses to filter by.')
 def export_token_transfers(start_block, end_block, batch_size, output, max_workers, provider_uri, tokens):
-    """Exports ERC20/ERC721 transfers."""
+    """Exports ERC20/ERC721/ERC1155 transfers."""
     job = ExportTokenTransfersJob(
         start_block=start_block,
         end_block=end_block,

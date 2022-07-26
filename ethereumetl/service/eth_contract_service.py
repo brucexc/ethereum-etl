@@ -33,8 +33,9 @@ class EthContractService:
             evm_code.disassemble(bytecode)
             basic_blocks = evm_code.basicblocks
             if basic_blocks and len(basic_blocks) > 0:
-                init_block = basic_blocks[0]
-                instructions = init_block.instructions
+                # init_block = basic_blocks[0]
+                # instructions = init_block.instructions
+                instructions = [inst for block in basic_blocks for inst in block.instructions]
                 push4_instructions = [inst for inst in instructions if inst.name == 'PUSH4']
                 return sorted(list(set('0x' + inst.operand for inst in push4_instructions)))
             else:
@@ -69,6 +70,16 @@ class EthContractService:
                c.implements_any_of('transfer(address,uint256)', 'transferFrom(address,address,uint256)') and \
                c.implements('approve(address,uint256)')
 
+    # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
+    # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol
+    def is_erc1155_contract(self, function_sighashes):
+        c = ContractWrapper(function_sighashes)
+        return c.implements('balanceOf(address,uint256)') and \
+               c.implements('safeTransferFrom(address,address,uint256,uint256,bytes)') and \
+               c.implements('safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)')
+               # c.implements('balanceOfBatch(address[],uint256[])') and \
+               # c.implements('setApprovalForAll(address,bool)') and \
+               # c.implements('isApprovedForAll(address,address)')
 
 def clean_bytecode(bytecode):
     if bytecode is None or bytecode == '0x':
